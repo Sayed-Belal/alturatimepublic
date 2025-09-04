@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AlturaTime - Upload Schedule</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #2a9078, #1f6f5b); color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; }
+    .container { background: #fff; color: #333; padding: 40px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); width: 90%; max-width: 500px; text-align: center; }
+    h1 { color: #2a9078; font-size: 2rem; margin-bottom: 10px; }
+    p { color: #555; margin-bottom: 20px; }
+    input[type="text"], input[type="file"] { width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem; }
+    button { background: #2a9078; color: white; border: none; padding: 14px; font-size: 1rem; border-radius: 10px; cursor: pointer; width: 100%; margin-top: 15px; transition: background 0.3s; }
+    button:hover { background: #238b6c; }
+    .link { margin-top: 20px; font-weight: 600; }
+    .link a { color: #2a9078; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AlturaTime</h1>
+    <p>Upload your class schedule to create a shareable link for loved ones.</p>
+    <input type="text" id="name" placeholder="Your Name">
+    <input type="file" id="file" accept=".ics">
+    <button onclick="upload()">Upload & Generate Link</button>
+    <div class="link" id="link"></div>
+  </div>
+
+  <script>
+    const GITHUB_TOKEN = "YOUR_GITHUB_TOKEN"; // Replace with your GitHub token
+    const REPO = "YOUR_USERNAME/altura-time";
+
+    async function upload() {
+      const name = document.getElementById("name").value.trim();
+      const file = document.getElementById("file").files[0];
+      if (!name || !file) { alert("Enter a name and choose a file!"); return; }
+
+      const fileId = Math.random().toString(36).substring(2, 10);
+      const path = `schedules/${fileId}.ics`;
+
+      const content = await file.text();
+      const encoded = btoa(unescape(encodeURIComponent(content)));
+
+      const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, {
+        method: "PUT",
+        headers: { 
+          "Authorization": `token ${GITHUB_TOKEN}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          message: `Add schedule for ${name}`,
+          content: encoded
+        })
+      });
+
+      if (res.ok) {
+        const link = `view.html?id=${fileId}&name=${encodeURIComponent(name)}`;
+        document.getElementById("link").innerHTML = `Share this link: <a href="${link}" target="_blank">${link}</a>`;
+      } else {
+        alert("Upload failed! Check console.");
+        console.error(await res.text());
+      }
+    }
+  </script>
+</body>
+</html>
